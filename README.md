@@ -8,8 +8,8 @@
 A nuxt module for managing rate limits in any environment. This module is in early development, there may be frequent breaking changes.
 
 - [✨ &nbsp;Release Notes](/CHANGELOG.md)
-<!-- - [🏀 Online playground](https://stackblitz.com/github/your-org/nuxt-rl?file=playground%2Fapp.vue) -->
-<!-- - [📖 &nbsp;Documentation](https://example.com) -->
+  <!-- - [🏀 Online playground](https://stackblitz.com/github/your-org/nuxt-rl?file=playground%2Fapp.vue) -->
+  <!-- - [📖 &nbsp;Documentation](https://example.com) -->
 
 ## Features
 
@@ -35,10 +35,8 @@ npm install --save-dev nuxt-rl
 
 ```js
 export default defineNuxtConfig({
-  modules: [
-    'nuxt-rl'
-  ]
-})
+  modules: ["nuxt-rl"],
+});
 ```
 
 That's it! You can now use nuxt-rl in your Nuxt app ✨
@@ -70,14 +68,12 @@ npm run release
 ```
 
 <!-- Badges -->
+
 [npm-version-src]: https://img.shields.io/npm/v/nuxt-rl/latest.svg?style=flat&colorA=18181B&colorB=28CF8D
 [npm-version-href]: https://npmjs.com/package/nuxt-rl
-
 [npm-downloads-src]: https://img.shields.io/npm/dm/nuxt-rl.svg?style=flat&colorA=18181B&colorB=28CF8D
 [npm-downloads-href]: https://npmjs.com/package/nuxt-rl
-
 [license-src]: https://img.shields.io/npm/l/nuxt-rl.svg?style=flat&colorA=18181B&colorB=28CF8D
 [license-href]: https://npmjs.com/package/nuxt-rl
-
 [nuxt-src]: https://img.shields.io/badge/Nuxt-18181B?logo=nuxt.js
 [nuxt-href]: https://nuxt.com
