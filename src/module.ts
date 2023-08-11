@@ -5,29 +5,30 @@ import {
   useLogger,
   addDevServerHandler,
   isNuxt2,
-} from "@nuxt/kit";
-import { objectHash } from "ohash";
-import { eventHandler } from "h3";
-import type { Nitro } from "nitropack";
-import type { BuiltinDriverName } from "unstorage";
+} from "@nuxt/kit"
+import { objectHash } from "ohash"
+import { eventHandler } from "h3"
+import { defu } from "defu"
+import type { Nitro } from "nitropack"
+import type { BuiltinDriverName } from "unstorage"
 
 export interface DefaultRateLimitRule extends RateLimitRule {
-  route: string;
+  route: string
 }
 
 export interface RateLimitRule {
-  limit: number;
-  period: number;
+  limit: number
+  period: number
 }
 
 export interface RlOptions {
-  enabled: boolean;
+  enabled: boolean
 
-  default: DefaultRateLimitRule | false;
-  rules: { [route: string]: RateLimitRule };
+  default: DefaultRateLimitRule | false
+  rules: { [route: string]: RateLimitRule }
 
-  driver: BuiltinDriverName;
-  driverOptions: any;
+  driver: BuiltinDriverName
+  driverOptions: any
 }
 
 export default defineNuxtModule<RlOptions>({
@@ -49,90 +50,66 @@ export default defineNuxtModule<RlOptions>({
       base: "./rl",
     },
 
-    rules: {
-      "/api/**": {
-        limit: 60,
-        period: 60,
-      },
-    },
+    rules: {},
   },
   setup(options, nuxt) {
+    const logger = useLogger("rl")
+
     if (isNuxt2()) {
-      throw new Error("RL does not support nuxt2 (sorry!)");
+      throw new Error("RL does not support nuxt2 (sorry!)")
     }
 
-    const resolver = createResolver(import.meta.url);
+    const resolver = createResolver(import.meta.url)
 
-    nuxt.options.runtimeConfig.rl = options as any;
-
-    addDevServerHandler({
-      route: "/_rl",
-      handler: eventHandler(() => {
-        return `
-          <html>
-            <head>
-            </head>
-            <body>
-              <h1>RL Debug Page</h1>
-              <ul>
-                <li>Enabled: ${options.enabled}</li>
-                <li>Default Rule: ${
-                  options.default === false ? "OFF" : "ON"
-                }</li>
-                <li>Rule Count: ${Object.values(options.rules).length}</li>
-                <li>Driver: ${encodeURI(options.driver)}</li>
-              </ul>
-
-              ${
-                options.default !== false
-                  ? `
-                <h1>Default Rule</h1>
-                <ul><li>${options.default.route}: ${options.default.limit} requests per ${options.default.limit} seconds</li></ul>
-              `
-                  : ""
-              }
-
-              <h1>Rules</h1>
-              <ul>
-                ${Object.entries(options.rules).map(
-                  ([path, rule]) =>
-                    `<li>${path}: ${rule.limit} requests per ${rule.period} seconds</li>`,
-                )}
-              </ul>
-            </body>
-          </html>
-        `;
-      }),
-    });
+    nuxt.options.runtimeConfig.rl = options as any
 
     if (options.enabled) {
       addServerHandler({
         handler: resolver.resolve("./runtime/server/middleware/rl"),
-      });
+      })
 
       nuxt.hook("nitro:init", async (nitro: Nitro) => {
-        const driver = nitro.storage.getMount("rl").driver;
+        const driver = nitro.storage.getMount("rl").driver
 
         if (!driver.setItem || !driver.clear) {
           throw new Error(
             `Incompatible driver for RL module "${driver.name}". Driver must support setItem and clear methods.`,
-          );
+          )
         }
 
-        const config = await driver.getItem("config");
-        const hash = objectHash(options);
+        const config = await driver.getItem("config")
+        const hash = objectHash(options)
 
         if (config != null && config != hash) {
-          useLogger("rl").warn("RL config changed, clearing database.");
+          logger.warn("RL config changed, clearing database.")
 
-          await driver.clear("data", {});
+          await driver.clear("data", {})
         }
 
-        await driver.setItem("config", hash, {});
-      });
+        await driver.setItem("config", hash, {})
+      })
+
+      if (nuxt.options.dev) {
+        nuxt.hook("pages:extend", (p) => {
+          p.push({
+            path: "/_rl",
+            file: resolver.resolve("./runtime/pages/dashboard"),
+          })
+        })
+
+        nuxt.hook("ready", (n) => {
+          if (n.options.pages) {
+            logger.info("RL Dashboard available http://localhost:3000/_rl")
+          }
+        })
+      }
 
       nuxt.hook("nitro:config", (nitroConfig) => {
-        nitroConfig.storage = nitroConfig.storage ?? {};
+        nitroConfig.storage = nitroConfig.storage ?? {}
+
+        nitroConfig.imports = defu(nuxt.options.nitro.imports, {
+          dirs: [resolver.resolve("./runtime/server/middleware/rl")],
+        })
 
         // There is no current rl config
         if (!nitroConfig.storage.rl) {
@@ -144,9 +121,9 @@ export default defineNuxtModule<RlOptions>({
             : {
                 driver: options.driver,
                 ...options.driverOptions,
-              };
+              }
         }
-      });
+      })
     }
   },
-});
+})

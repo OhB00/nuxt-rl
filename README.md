@@ -36,7 +36,7 @@ npm install --save-dev nuxt-rl
 ```js
 export default defineNuxtConfig({
   modules: ["nuxt-rl"],
-});
+})
 ```
 
 That's it! You can now use nuxt-rl in your Nuxt app ✨
