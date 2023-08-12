@@ -2,31 +2,45 @@ import type { H3Event } from "h3"
 import { createRouter } from "radix3"
 import { rllogger } from "./rl"
 
-export interface KeyData {
-  key: string
-  metadata: Record<string, any>
-}
+export type KeyData =
+  | {
+      success: true
+      fn: string
+      key: string
+      metadata: Record<string, any>
+    }
+  | {
+      success: false
+    }
 
 export type KeyFunction = (event: H3Event) => Promise<KeyData>
-export let defaultKeys: KeyFunction[] = [keyByIP]
 export const keyRouter = createRouter<KeyFunction[]>()
 
-export async function keyByIP(event: H3Event): Promise<KeyData> {
+export let fallbackKeys: KeyFunction[] = [keyByIP]
+
+export const useRLDefaults = () => ({
+  keys: {
+    keyByIP,
+  },
+})
+
+async function keyByIP(event: H3Event): Promise<KeyData> {
+  const fn = "key_by_ip"
   const forwarded = event.node.req.headers["x-forwarded-for"]
 
   if (!forwarded) {
     rllogger.warn("Could not determine IP address.")
+
     return {
-      key: "::",
-      metadata: {
-        ip: "::",
-      },
+      success: false,
     }
   }
 
   if (Array.isArray(forwarded)) {
     rllogger.warn("Multiple forwarded headers.")
     return {
+      fn,
+      success: true,
       key: forwarded[0],
       metadata: {
         ip: forwarded[0],
@@ -35,6 +49,8 @@ export async function keyByIP(event: H3Event): Promise<KeyData> {
   }
 
   return {
+    fn,
+    success: true,
     key: forwarded,
     metadata: {
       ip: forwarded,
@@ -47,49 +63,44 @@ export async function getKeyData(e: H3Event): Promise<KeyData> {
   const routeKeys = keyRouter.lookup(e.path)
 
   // If there are no keys use the defaults
-  const keys = routeKeys == null ? defaultKeys : routeKeys
+  const keys = routeKeys == null ? fallbackKeys : routeKeys
 
-  // Start calling the key functions
-  const promises = keys.map((k) => k(e))
+  // There are no key functions, we can't operate normally
+  if (keys.length === 0) {
+    throw new Error("No key functions found. You must have at least one key function for ratelimits to work. Try adding the default IP key function.")
+  }
 
-  // Resolve all of the promises
-  const resolved = await Promise.all(promises)
+  // Attempt each key function until we find a winner
+  for (const fn of keys) {
+    const data = await fn(e)
 
-  // Remove colons from output, join each key with a colon
-  const key = resolved.map((x) => x.key.replaceAll(":", ".")).join(":")
+    if (data.success) {
+      return {
+        fn: "",
+        success: true,
 
-  // Search through our metadata and find duplicated keys
-  // Likely a faster way to do this
-  const metadata: Record<string, any> = {}
-  for (const resolvedItem of resolved) {
-    const meta = resolvedItem.metadata
-    const metaKeys = Object.keys(meta)
-
-    for (const metaKey of metaKeys) {
-      if (metaKey in metadata) {
-        rllogger.warn(
-          `Duplicate RL metadata key '${metaKey}'. Metadata may be inconsistent.`,
-        )
-      } else {
-        metadata[metaKey] = meta[metaKey]
+        // Start with the function name to stop collisions
+        // Ideally we should hash these keys to prevent collision attacks with colons
+        key: data.fn + ":" + data.key.replaceAll(":", "."),
+        metadata: data.metadata,
       }
     }
   }
 
   return {
-    key,
-    metadata,
+    success: false,
   }
 }
 
-export function addKeyFunctions(path: string, ...fns: KeyFunction[]) {
+export function useKeyFunctions(path: string, ...fns: KeyFunction[]) {
+  // We may need to delete the existing one?
+  if (keyRouter.lookup(path)) {
+    rllogger.warn(`Key functions already defined for path '${path}'`)
+  }
+
   keyRouter.insert(path, fns)
 }
 
-export function useDefaultKeyFunctions(...fns: KeyFunction[]) {
-  defaultKeys = fns
-}
-
-export function addDefaultKeyFunction(fn: KeyFunction) {
-  defaultKeys.push(fn)
+export function useFallbackKeyFunctions(...fns: KeyFunction[]) {
+  fallbackKeys = fns
 }

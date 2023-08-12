@@ -4,7 +4,7 @@ import { createRouter } from "radix3"
 import type { H3Event } from "h3"
 import { getKeyData } from "./key"
 import { useLogger } from "@nuxt/kit"
-import { addCustomRule, getRule } from "./rule"
+import { addCustomRule, getRule as getRuleOverride } from "./rule"
 
 export type RateLimitEntry = {
   start: number
@@ -66,11 +66,52 @@ export async function isRateLimited(
   // Remove params bit from router
   delete rule.params
 
-  const data = await getKeyData(event)
+  let data = await getKeyData(event)
+
+  // If we need to use the limit strategy create a fake key
+  if (!data.success && options.noKeyStratergy == "limit") {
+    data = {
+      success: true,
+      key: "unkeyable:unkeyable",
+      metadata: {
+        unkeyable: true,
+      },
+    } as any
+  }
+
+  // The request could not be keyed
+  if (!data.success) {
+    switch (options.noKeyStratergy) {
+      case "block":
+        return {
+          limited: true,
+          entry: {
+            start: 0,
+            end: 0,
+            count: 0,
+          },
+          rule,
+        }
+
+      case "warn":
+      default:
+        rllogger.warn(
+          "Request could not be keyed, it will be allowed by default. This can be changed in RL options.",
+        )
+
+      case "allow":
+        return {
+          limited: false,
+          entry: null,
+          rule: null,
+        }
+    }
+  }
+
   const entry = await rldata.getItem<RateLimitEntry>(data.key)
 
   // Try override the existing rule if there a custom one in place
-  rule = await getRule(event, data, rule)
+  rule = await getRuleOverride(event, data, rule)
 
   // This client has sent a request before
   if (entry) {

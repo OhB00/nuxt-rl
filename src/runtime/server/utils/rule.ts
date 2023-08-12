@@ -9,6 +9,7 @@ export type CustomRuleFunction = (
   data: KeyData,
   rule: RateLimitRule,
 ) => Promise<RateLimitRule>
+
 export const customRuleRouter = createRouter<{ handler: CustomRuleFunction }>()
 
 export function addCustomRule(path: string, fn: CustomRuleFunction) {
