@@ -5,10 +5,10 @@ export default defineNuxtConfig({
 
     // Default rate limit only to api, 1 req
     default: {
-      route: "/api/**",
+      route: "/**",
       limit: 10,
-      period: 5,
-    },
+      period: 60,
+    }
   },
   devtools: {
     enabled: true,
