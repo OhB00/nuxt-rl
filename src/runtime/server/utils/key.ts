@@ -67,7 +67,9 @@ export async function getKeyData(e: H3Event): Promise<KeyData> {
 
   // There are no key functions, we can't operate normally
   if (keys.length === 0) {
-    throw new Error("No key functions found. You must have at least one key function for ratelimits to work. Try adding the default IP key function.")
+    throw new Error(
+      "No key functions found. You must have at least one key function for ratelimits to work. Try adding the default IP key function.",
+    )
   }
 
   // Attempt each key function until we find a winner

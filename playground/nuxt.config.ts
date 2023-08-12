@@ -8,7 +8,7 @@ export default defineNuxtConfig({
       route: "/**",
       limit: 10,
       period: 60,
-    }
+    },
   },
   devtools: {
     enabled: true,
