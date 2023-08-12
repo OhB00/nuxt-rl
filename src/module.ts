@@ -5,6 +5,7 @@ import {
   useLogger,
   addDevServerHandler,
   isNuxt2,
+  addImports,
 } from "@nuxt/kit"
 import { objectHash } from "ohash"
 import { eventHandler } from "h3"
@@ -32,6 +33,8 @@ export interface RlOptions {
 
   useAutoClear: boolean
   useDebugPage: boolean
+
+  noKeyStratergy: "block" | "warn" | "limit" | "allow"
 }
 
 export default defineNuxtModule<RlOptions>({
@@ -43,6 +46,7 @@ export default defineNuxtModule<RlOptions>({
     enabled: true,
     useDebugPage: true,
     useAutoClear: false,
+    noKeyStratergy: "warn",
 
     default: {
       route: "/api/**",
@@ -76,6 +80,8 @@ export default defineNuxtModule<RlOptions>({
     addServerHandler({
       handler: resolver.resolve("./runtime/server/middleware/rl"),
     })
+
+    // addImports([{ name: "" }])
 
     // Add our debug page to development builds.
     if (nuxt.options.dev && options.useDebugPage) {
