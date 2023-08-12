@@ -13,7 +13,7 @@
     </div>
 
     <div>
-        <button @click="login">Login</button>
+      <button @click="login">Login</button>
     </div>
   </div>
 </template>
@@ -25,12 +25,12 @@ const username = ref("")
 const password = ref("")
 
 async function login() {
-    await $fetch("/api/login", {
-        method: "POST",
-        body: {
-            username: username.value,
-            password: password.value
-        }
-    })
+  await $fetch("/api/login", {
+    method: "POST",
+    body: {
+      username: username.value,
+      password: password.value,
+    },
+  })
 }
 </script>

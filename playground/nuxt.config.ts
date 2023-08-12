@@ -1,7 +1,7 @@
 export default defineNuxtConfig({
   modules: ["../src/module"],
   rl: {
-    enabled: false,
+    enabled: true,
 
     // Default rate limit only to api, 1 req
     default: {

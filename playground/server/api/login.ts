@@ -1,8 +1,8 @@
+import { defineEventHandler, readBody, setCookie } from "#imports"
+
 //@ts-ignore
 import jwt from "jsonwebtoken"
-
 import type { verify as v, sign as s, decode as d } from "jsonwebtoken"
-import { defineEventHandler, readBody, setCookie } from "#imports"
 export const {
   verify,
   sign,

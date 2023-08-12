@@ -1,6 +1,4 @@
 import { isRateLimited } from "../utils/rl"
-import { createError, defineEventHandler } from "h3"
-import { useRuntimeConfig } from "#imports"
 import { RlOptions } from "../../../module"
 
 export default defineEventHandler(async (event) => {
