@@ -33,8 +33,12 @@ export async function getRule(
 
   delete customRule.params
 
-  return await customRule.handler(event, {
-    key: data.key,
-    metadata: data.metadata
-  }, rule)
+  return await customRule.handler(
+    event,
+    {
+      key: data.key,
+      metadata: data.metadata,
+    },
+    rule,
+  )
 }

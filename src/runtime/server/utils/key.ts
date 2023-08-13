@@ -20,35 +20,35 @@ export let fallbackKeys: KeyFunction[] = [keyByIP]
 
 export const useRL = () => ({
   keys: {
-    combine,
     keyByIP,
-    keyByPath
+    keyByPath,
   },
+  combineKeys: combine,
 })
 
 function combine(...keys: KeyFunction[]): KeyFunction {
   const fn: KeyFunction = async (e) => {
-
-    const results = await Promise.all(keys.map(k => k(e)))
-    const yes = results.filter(k => k.success)
+    const results = await Promise.all(keys.map((k) => k(e)))
+    const yes = results.filter((k) => k.success)
 
     if (yes.length == 0) {
       return {
-        success: false
+        success: false,
       }
     }
 
     const metadata = {} as any
     for (const y of yes) {
       if (y.success) {
-
-        for (const [k,v] of Object.entries(y.metadata)) {
-            metadata[k] = v
+        for (const [k, v] of Object.entries(y.metadata)) {
+          metadata[k] = v
         }
       }
     }
 
-    const key = yes.map(x => x.success ? `${x.fn}:${encodeURIComponent(x.key)}` : "").join(":")
+    const key = yes
+      .map((x) => (x.success ? `${x.fn}:${encodeURIComponent(x.key)}` : ""))
+      .join(":")
 
     return {
       success: true,
@@ -56,11 +56,11 @@ function combine(...keys: KeyFunction[]): KeyFunction {
 
       // It should always be a success
       key,
-      metadata
+      metadata,
     }
   }
 
- (fn as any)._dontEncode = true
+  ;(fn as any)._dontEncode = true
 
   return fn
 }
@@ -69,8 +69,8 @@ async function keyByPath(event: H3Event): Promise<KeyData> {
   return {
     success: true,
     fn: "key_by_path",
-    key: event.path.split('?')[0],
-    metadata: {}
+    key: event.path.split("?")[0],
+    metadata: {},
   }
 }
 
@@ -127,8 +127,9 @@ export async function getKeyData(e: H3Event): Promise<KeyData> {
     const data = await fn(e)
 
     if (data.success) {
-
-      const encodedKey = (fn as any)._dontEncode ? data.key : encodeURIComponent(data.key)
+      const encodedKey = (fn as any)._dontEncode
+        ? data.key
+        : encodeURIComponent(data.key)
 
       return {
         fn: "",
