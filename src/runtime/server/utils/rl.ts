@@ -108,6 +108,7 @@ export async function isRateLimited(
     }
   }
 
+  // Try fetch our key from whatever data store we're using
   const entry = await rldata.getItem<RateLimitEntry>(data.key)
 
   // Try override the existing rule if there a custom one in place
