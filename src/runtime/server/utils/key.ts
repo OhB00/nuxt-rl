@@ -18,11 +18,61 @@ export const keyRouter = createRouter<KeyFunction[]>()
 
 export let fallbackKeys: KeyFunction[] = [keyByIP]
 
-export const useRLDefaults = () => ({
+export const useRL = () => ({
   keys: {
+    combine,
     keyByIP,
+    keyByPath
   },
 })
+
+function combine(...keys: KeyFunction[]): KeyFunction {
+  const fn: KeyFunction = async (e) => {
+
+    const results = await Promise.all(keys.map(k => k(e)))
+    const yes = results.filter(k => k.success)
+
+    if (yes.length == 0) {
+      return {
+        success: false
+      }
+    }
+
+    const metadata = {} as any
+    for (const y of yes) {
+      if (y.success) {
+
+        for (const [k,v] of Object.entries(y.metadata)) {
+            metadata[k] = v
+        }
+      }
+    }
+
+    const key = yes.map(x => x.success ? `${x.fn}:${encodeURIComponent(x.key)}` : "").join(":")
+
+    return {
+      success: true,
+      fn: "combined",
+
+      // It should always be a success
+      key,
+      metadata
+    }
+  }
+
+ (fn as any)._dontEncode = true
+
+  return fn
+}
+
+async function keyByPath(event: H3Event): Promise<KeyData> {
+  return {
+    success: true,
+    fn: "key_by_path",
+    key: event.path.split('?')[0],
+    metadata: {}
+  }
+}
 
 async function keyByIP(event: H3Event): Promise<KeyData> {
   const fn = "key_by_ip"
@@ -77,13 +127,16 @@ export async function getKeyData(e: H3Event): Promise<KeyData> {
     const data = await fn(e)
 
     if (data.success) {
+
+      const encodedKey = (fn as any)._dontEncode ? data.key : encodeURIComponent(data.key)
+
       return {
         fn: "",
         success: true,
 
         // Start with the function name to stop collisions
-        // Ideally we should hash these keys to prevent collision attacks with colons
-        key: data.fn + ":" + data.key.replaceAll(":", "."),
+        // Need to address other collision methods
+        key: `${data.fn}:${encodedKey}`,
         metadata: data.metadata,
       }
     }
