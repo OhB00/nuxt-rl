@@ -81,7 +81,18 @@ export default defineNuxtModule<RlOptions>({
       handler: resolver.resolve("./runtime/server/middleware/rl"),
     })
 
-    // addImports([{ name: "" }])
+    addImports([
+      { name: "useKeyFunctions", as: "useKeyFunctions", from: resolver.resolve("./runtime/server/utils/key") },
+      { name: "useFallbackKeyFunctions", as: "useFallbackKeyFunctions", from: resolver.resolve("./runtime/server/utils/key") },
+    ])
+
+    addImports([
+      { name: "addCustomRule", as: "useCustomRule", from: resolver.resolve("./runtime/server/utils/rule") },
+    ])
+
+    addImports([
+      { name: "isRateLimited", as: "isRateLimited", from: resolver.resolve("./runtime/server/utils/rl") },
+    ])
 
     // Add our debug page to development builds.
     if (nuxt.options.dev && options.useDebugPage) {
@@ -105,8 +116,7 @@ export default defineNuxtModule<RlOptions>({
 
       nitroConfig.imports = defu(nuxt.options.nitro.imports, {
         dirs: [
-          resolver.resolve("./runtime/server/middleware/rl"),
-          resolver.resolve("./runtime/server/pages/dashboard"),
+          resolver.resolve("./runtime/server/export")
         ],
       })
 
