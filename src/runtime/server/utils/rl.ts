@@ -4,7 +4,8 @@ import { createRouter } from "radix3"
 import type { H3Event } from "h3"
 import { getKeyData } from "./key"
 import { useLogger } from "@nuxt/kit"
-import { addCustomRule, getRule as getRuleOverride } from "./rule"
+import { getRule as getRuleOverride } from "./rule"
+import { ConsolaInstance } from "consola" 
 
 export type RateLimitEntry = {
   start: number
@@ -25,9 +26,7 @@ export type RateLimitResult =
     }
 
 export const rldata = useStorage("rl:data")
-export const rllogger = useLogger("rl")
-
-rllogger.level = 4
+export const rllogger: ConsolaInstance = useLogger("rl")
 
 export async function isRateLimited(
   event: H3Event,
